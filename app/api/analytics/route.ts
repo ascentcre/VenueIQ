@@ -132,7 +132,7 @@ export async function GET(req: Request) {
       0
     );
     const totalNetTicketRevenue = eventsWithPerformance.reduce(
-      (sum, e) => sum + (e.performance?.netTicketRevenue || e.performance?.netReceipts || 0),
+      (sum, e) => sum + (e.performance?.netTicketRevenue || 0),
       0
     );
     const totalFbSales = eventsWithPerformance.reduce(
