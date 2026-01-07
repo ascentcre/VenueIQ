@@ -305,8 +305,8 @@ export function PipelineBoard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-end">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-end mb-6 flex-shrink-0">
         <button
           onClick={() => setIsAddModalOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
@@ -316,17 +316,17 @@ export function PipelineBoard() {
         </button>
       </div>
       <DragDropContext onDragStart={onDragStart} onDragUpdate={onDragUpdate} onDragEnd={onDragEnd}>
-        <div className="relative">
+        <div className="relative flex-1 min-h-0 flex flex-col">
           {/* Left scroll indicator */}
           {showLeftArrow && (
-            <div className="absolute left-0 top-0 bottom-4 w-16 bg-gradient-to-r from-white via-white to-transparent z-10 flex items-center justify-start pointer-events-none">
+            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white via-white to-transparent z-10 flex items-center justify-start pointer-events-none">
               <ChevronLeft className="text-gray-600 w-8 h-8 animate-pulse drop-shadow-md" />
             </div>
           )}
           
           {/* Right scroll indicator */}
           {showRightArrow && (
-            <div className="absolute right-0 top-0 bottom-4 w-16 bg-gradient-to-l from-white via-white to-transparent z-10 flex items-center justify-end pointer-events-none">
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white via-white to-transparent z-10 flex items-center justify-end pointer-events-none">
               <ChevronRight className="text-gray-600 w-8 h-8 animate-pulse drop-shadow-md" />
             </div>
           )}
@@ -334,7 +334,7 @@ export function PipelineBoard() {
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex gap-6 overflow-x-scroll pb-4 px-2 -mx-2 scroll-smooth scrollbar-visible"
+            className="flex gap-6 overflow-x-auto overflow-y-hidden pb-4 px-2 -mx-2 scroll-smooth scrollbar-visible flex-1"
             style={{ scrollbarGutter: 'stable' }}
           >
             {stageConfigs.map((stageConfig) => {
@@ -343,7 +343,7 @@ export function PipelineBoard() {
             return (
               <div key={stageConfig.name} className="flex-shrink-0 w-80">
                 <div
-                  className="bg-gray-50 border-2 border-gray-200 rounded-xl shadow-lg h-[calc(100vh-200px)] flex flex-col overflow-hidden"
+                  className="bg-gray-50 border-2 border-gray-200 rounded-xl shadow-lg h-full flex flex-col overflow-hidden"
                 >
                   {/* Stage Header */}
                   <div className="bg-gray-100 border-b-2 border-gray-200 p-5 h-24 flex flex-shrink-0">
