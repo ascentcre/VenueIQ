@@ -360,7 +360,7 @@ export async function GET(req: Request) {
       0
     );
     const totalFees = eventsWithPerformance.reduce(
-      (sum, e) => sum + (e.performance?.creditCardFees || 0) + (e.performance?.ticketPlatformFees || 0),
+      (sum, e) => sum + (e.performance?.creditCardFees || 0) + (e.performance?.ticketingPlatformFees || 0),
       0
     );
 
