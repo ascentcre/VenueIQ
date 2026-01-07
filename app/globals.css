@@ -212,3 +212,66 @@ a[href="/settings"] svg {
   position: relative;
   z-index: 51;
 }
+
+/* Lola Chat Markdown Styling */
+.prose {
+  color: inherit;
+}
+
+.prose strong {
+  color: inherit;
+  font-weight: 700;
+}
+
+.prose p {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose ul {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  padding-left: 1.25rem;
+}
+
+.prose li {
+  margin-top: 0.125rem;
+  margin-bottom: 0.125rem;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: inherit;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose h1 {
+  font-size: 1.25rem;
+}
+
+.prose h2 {
+  font-size: 1.125rem;
+}
+
+.prose h3 {
+  font-size: 1rem;
+}
+
+/* Ensure proper spacing in chat bubbles */
+.prose-sm {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Override prose defaults for compact chat display */
+.prose.max-w-none {
+  max-width: none;
+}
+
+.prose code {
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
