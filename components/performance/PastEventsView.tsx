@@ -13,6 +13,7 @@ interface Event {
     genre?: string;
     ticketsSold: number;
     capacity: number;
+    compTickets?: number;
     capacityUtilization?: number;
     totalGrossRevenue?: number;
     netEventIncome?: number;
