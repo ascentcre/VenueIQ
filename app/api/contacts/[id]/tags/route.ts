@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -13,6 +13,9 @@ export async function POST(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const resolvedParams = await params;
+    const contactId = resolvedParams.id;
 
     const venueMember = await prisma.venueMember.findFirst({
       where: { userId: session.user.id },
@@ -23,7 +26,7 @@ export async function POST(
     }
 
     const contact = await prisma.contact.findUnique({
-      where: { id: params.id },
+      where: { id: contactId },
     });
 
     if (!contact || contact.venueId !== venueMember.venueId) {
@@ -34,7 +37,7 @@ export async function POST(
 
     const tag = await prisma.contactTag.create({
       data: {
-        contactId: params.id,
+        contactId: contactId,
         name,
       },
     });

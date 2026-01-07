@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -13,6 +13,9 @@ export async function DELETE(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const resolvedParams = await params;
+    const memberId = resolvedParams.id;
 
     const venueMember = await prisma.venueMember.findFirst({
       where: { userId: session.user.id },
@@ -23,7 +26,7 @@ export async function DELETE(
     }
 
     const memberToDelete = await prisma.venueMember.findUnique({
-      where: { id: params.id },
+      where: { id: memberId },
     });
 
     if (!memberToDelete || memberToDelete.venueId !== venueMember.venueId) {
@@ -38,7 +41,7 @@ export async function DELETE(
     }
 
     await prisma.venueMember.delete({
-      where: { id: params.id },
+      where: { id: memberId },
     });
 
     return NextResponse.json({ message: 'Member removed' });

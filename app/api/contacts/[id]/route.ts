@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -13,6 +13,9 @@ export async function PUT(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const resolvedParams = await params;
+    const contactId = resolvedParams.id;
 
     const venueMember = await prisma.venueMember.findFirst({
       where: { userId: session.user.id },
@@ -23,7 +26,7 @@ export async function PUT(
     }
 
     const contact = await prisma.contact.findUnique({
-      where: { id: params.id },
+      where: { id: contactId },
     });
 
     if (!contact || contact.venueId !== venueMember.venueId) {
@@ -33,7 +36,7 @@ export async function PUT(
     const { type, name, email, phone, notes } = await req.json();
 
     const updatedContact = await prisma.contact.update({
-      where: { id: params.id },
+      where: { id: contactId },
       data: {
         type,
         name,
@@ -54,8 +57,8 @@ export async function PUT(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,6 +66,9 @@ export async function DELETE(
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const resolvedParams = await params;
+    const contactId = resolvedParams.id;
 
     const venueMember = await prisma.venueMember.findFirst({
       where: { userId: session.user.id },
@@ -73,7 +79,7 @@ export async function DELETE(
     }
 
     const contact = await prisma.contact.findUnique({
-      where: { id: params.id },
+      where: { id: contactId },
     });
 
     if (!contact || contact.venueId !== venueMember.venueId) {
@@ -81,7 +87,7 @@ export async function DELETE(
     }
 
     await prisma.contact.delete({
-      where: { id: params.id },
+      where: { id: contactId },
     });
 
     return NextResponse.json({ success: true });
