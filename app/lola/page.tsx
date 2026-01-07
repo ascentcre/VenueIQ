@@ -9,7 +9,7 @@ export default function LolaPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-brown-800">Lola</h1>
-          <p className="text-brown-600 mt-1">Your AI research assistant for live music venues</p>
+          <p className="text-brown-600 mt-1">Your AI research assistant and data analyst for live music venues</p>
         </div>
         <LolaChat />
       </div>

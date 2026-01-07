@@ -7,7 +7,7 @@ export function LolaChat() {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([
     {
       role: 'assistant',
-      content: "Hi! I'm Lola, your AI research assistant. I'm here to help you with booking, venue operations, and industry insights. What would you like to know?",
+      content: "Hi! I'm Lola, your AI research assistant and data analyst. I'm here to help you with booking, venue operations, industry insights, and analyzing your historical event data to uncover patterns and trends. Ask me about past events, performance metrics, F&B sales, or any other data insights you'd like to explore!",
     },
   ]);
   const [input, setInput] = useState('');
@@ -88,7 +88,7 @@ export function LolaChat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Lola anything about booking, venue operations, or the music industry..."
+            placeholder="Ask Lola about booking, venue operations, past events, data insights, or the music industry..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             disabled={isLoading}
           />
