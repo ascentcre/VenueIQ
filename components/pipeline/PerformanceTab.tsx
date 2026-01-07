@@ -582,3 +582,9 @@ export function PerformanceTab({ opportunity, onSave, eventId: providedEventId }
   // This is a placeholder for the full form which is ~1200 lines
   // I'll continue in the next part...
 
+  return (
+    <div>
+      <p>Performance form placeholder - form implementation needed</p>
+    </div>
+  );
+}
