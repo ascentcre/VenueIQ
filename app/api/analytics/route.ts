@@ -136,7 +136,11 @@ export async function GET(req: Request) {
       0
     );
     const totalFbSales = eventsWithPerformance.reduce(
-      (sum, e) => sum + (e.performance?.fbsalesTotal || e.performance?.perCapFb ? (e.performance.perCapFb * (e.performance.ticketsSold || 0)) : 0),
+      (sum, e) => {
+        const perf = e.performance;
+        if (!perf) return sum;
+        return sum + (perf.fbsalesTotal || (perf.perCapFb ? (perf.perCapFb * (perf.ticketsSold || 0)) : 0));
+      },
       0
     );
     const totalMerchVenuePortion = eventsWithPerformance.reduce(
