@@ -1,0 +1,214 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  
+  /* Primary Colors */
+  --primary-dark: #1a1a2e;      /* Deep midnight blue - sophistication */
+  --primary-accent: #0f7b6c;     /* Teal/jade - your current brand color */
+  --primary-light: #16c79a;      /* Bright teal - energy, creativity */
+  
+  /* Secondary Colors */
+  --secondary-warm: #f39c12;     /* Amber/gold - stage lighting warmth */
+  --secondary-cool: #3498db;     /* Electric blue - modern, tech */
+  
+  /* Neutrals */
+  --neutral-darkest: #0a0a0f;    /* Almost black */
+  --neutral-dark: #2d2d44;       /* Dark gray-blue */
+  --neutral-mid: #6c6c8e;        /* Mid gray */
+  --neutral-light: #e8e8f0;      /* Off-white */
+  --neutral-white: #ffffff;      /* Pure white */
+  
+  /* Status Colors */
+  --success: #10b981;            /* Green - book again */
+  --warning: #f59e0b;            /* Amber - maybe */
+  --danger: #ef4444;             /* Red - do not book */
+  --info: #3b82f6;               /* Blue - never booked */
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: var(--neutral-white);
+  color: var(--primary-dark);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* FullCalendar Custom Styling */
+.fc-theme-standard .fc-scrollgrid {
+  border-color: #e5e7eb;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: #e5e7eb;
+}
+
+.fc-button-primary {
+  background-color: var(--primary-accent) !important;
+  border-color: var(--primary-accent) !important;
+  color: var(--neutral-white) !important;
+}
+
+.fc-button-primary:hover {
+  background-color: var(--primary-light) !important;
+  border-color: var(--primary-light) !important;
+}
+
+.fc-button-primary:disabled {
+  background-color: var(--neutral-mid) !important;
+  border-color: var(--neutral-mid) !important;
+  opacity: 0.6;
+}
+
+.fc-button-active {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+}
+
+.fc-today-button {
+  background-color: var(--secondary-warm) !important;
+  border-color: var(--secondary-warm) !important;
+}
+
+.fc-today-button:hover {
+  background-color: #d68910 !important;
+  border-color: #d68910 !important;
+}
+
+.fc-daygrid-day.fc-day-today {
+  background-color: var(--neutral-light) !important;
+}
+
+.fc-highlight {
+  background-color: var(--neutral-light) !important;
+}
+
+.fc-event-title {
+  font-weight: 500;
+}
+
+.fc-col-header-cell {
+  background-color: var(--neutral-light);
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.fc-daygrid-day-number {
+  color: var(--neutral-dark);
+}
+
+.fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  color: var(--primary-accent);
+  font-weight: 700;
+}
+
+/* Pipeline Board Custom Scrollbar */
+.scrollbar-visible {
+  scrollbar-width: thin;
+  scrollbar-color: #9CA3AF #E5E7EB;
+}
+
+.scrollbar-visible::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: #E5E7EB;
+  border-radius: 6px;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 6px;
+  border: 2px solid #E5E7EB;
+}
+
+.scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: #6B7280;
+}
+
+/* Force horizontal scrollbar to always be visible */
+.scrollbar-visible.overflow-x-auto {
+  overflow-x: scroll !important;
+}
+
+.scrollbar-visible.overflow-x-auto::-webkit-scrollbar {
+  display: block !important;
+}
+
+/* Ensure sidebar icons are above Next.js compilation overlays */
+aside,
+[data-sidebar],
+.w-64 {
+  position: relative;
+  z-index: 1;
+}
+
+/* Prevent Next.js compilation indicator from overlaying sidebar icons */
+svg[class*="w-5"][class*="h-5"] {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* Hide or reposition Next.js Fast Refresh indicator that appears in sidebar */
+div[data-nextjs-toast],
+div[data-nextjs-toast] ~ *,
+[data-nextjs-portal] {
+  pointer-events: none;
+}
+
+/* Specifically target the Next.js indicator in the sidebar area */
+.w-64 ~ div[data-nextjs-toast],
+.w-64 [data-nextjs-toast],
+.w-64 [data-nextjs-portal] {
+  display: none !important;
+}
+
+/* Hide Next.js compilation indicator that appears as draggable "N" */
+/* Reposition any fixed position overlays away from sidebar */
+body > div[style*="position: fixed"]:not([class]):not([id]):not([data-nextjs-portal]) {
+  /* Target fixed position divs that might be Next.js indicators */
+  /* Only apply if they're in the left side of the screen (where sidebar is) */
+}
+
+/* More specific: hide Next.js indicators in sidebar area */
+.w-64 ~ div[style*="position: fixed"],
+.w-64 + div[style*="position: fixed"] {
+  display: none !important;
+}
+
+/* Ensure Settings link area is protected from overlays */
+a[href="/settings"] {
+  position: relative;
+  z-index: 100 !important;
+  overflow: visible;
+}
+
+a[href="/settings"] svg {
+  position: relative;
+  z-index: 101 !important;
+  pointer-events: auto;
+}
+
+/* Prevent any overlay from covering sidebar navigation */
+.w-64 nav,
+.w-64 a {
+  position: relative;
+  z-index: 50;
+}
+
+.w-64 svg {
+  position: relative;
+  z-index: 51;
+}

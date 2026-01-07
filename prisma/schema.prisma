@@ -1,0 +1,457 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For credentials auth
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  venueMembers  VenueMember[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Venue {
+  id              String   @id @default(cuid())
+  name            String
+  city            String
+  state           String
+  zipcode         String
+  capacity        Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  members         VenueMember[]
+  events          Event[]
+  opportunities   Opportunity[]
+  contacts        Contact[]
+  aiConversations AIConversation[]
+  aiContext       String?  @db.Text // Venue-specific context for Lola
+}
+
+model VenueMember {
+  id              String   @id @default(cuid())
+  venueId         String
+  userId          String
+  role            String   @default("member") // "admin" or "member"
+  canViewAnalytics Boolean @default(false)
+  createdAt       DateTime @default(now())
+
+  venue           Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([venueId, userId])
+}
+
+model Event {
+  id              String   @id @default(cuid())
+  venueId         String
+  title           String
+  description     String?  @db.Text
+  startDate       DateTime
+  endDate         DateTime
+  artistName      String?
+  supportActs     String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  venue           Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  notes           EventNote[]
+  documents       EventDocument[]
+  comments        EventComment[]
+  tags            EventTag[]
+  performance     EventPerformance?
+  opportunity     Opportunity? @relation
+}
+
+model EventNote {
+  id        String   @id @default(cuid())
+  eventId   String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventDocument {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+  url       String
+  type      String?
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventComment {
+  id        String   @id @default(cuid())
+  eventId   String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model EventTag {
+  id        String   @id @default(cuid())
+  eventId   String
+  name      String
+  color     String?
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, name])
+}
+
+model EventPerformance {
+  id                    String   @id @default(cuid())
+  eventId               String   @unique
+  
+  // Event Basics (NEW)
+  eventDate             DateTime?  // Event date
+  eventTime             String?    // Event time (HH:mm format)
+  eventName             String?    // Event name/artist name
+  artistId               String?    // Foreign key to Contacts (artist)
+  agentId               String?    // Foreign key to Contacts (agent/promoter)
+  genre                 String?    // Genre/Category (Rock, Jazz, Hip-Hop, etc.)
+  promoterName          String?    // Promoter/Talent Buyer name (legacy)
+  isRecurringCustomer   Boolean?   // Repeat customer flag
+  
+  // Capacity & Attendance (Enhanced)
+  capacity              Int
+  ticketsSold           Int
+  compTickets           Int?       // Comp tickets (attend but don't generate revenue)
+  
+  // Advance Sales Timeline (NEW)
+  advanceSales30Plus    Int?       // Sales 30+ days out
+  advanceSales7to30     Int?       // Sales 7-30 days out
+  advanceSalesWeekOf    Int?       // Sales week of show
+  advanceSalesDayOf     Int?       // Sales day of show
+  doorSales             Int?       // Walk-up/door sales
+  
+  // Ticketing Information (Enhanced)
+  ticketPrices          Json?      // Array of {level, price, quantitySold, quantityAvailable, feesKeptByVenue, marketingChannel, gross}
+  
+  // Deal Information (Enhanced)
+  dealType              String?    // "versus", "flat guarantee", "percentage", "hybrid"
+  artistGuarantee       Float?
+  percentageSplit       Float?     // Percentage split if applicable
+  doorPriceSplitPoint   Float?     // Door price split point for hybrid deals
+  merchDeal             String?    @db.Text
+  merchCommission       Float?     // Percentage or flat amount
+  merchCommissionType   String?    // "percentage" or "flat"
+  productionCosts       Float?     // Production/Backline costs
+  productionCostsPaidBy String?    // "venue" or "artist"
+  
+  // Revenue Streams (Reorganized & Enhanced)
+  // Ticketing Revenue
+  grossTicketSales      Float?     // Auto-calc from ticket levels
+  facilityFees          Float?     // Fees kept by venue (legacy)
+  facilityFeesKept      Float?     // Fees kept by venue
+  ticketingPlatformFees Float?     // Fees paid to platform (Eventbrite, etc.) (legacy)
+  ticketingFeesPaidToPlatform Float? // Fees paid to platform
+  ticketTaxes           Float?     // Legacy
+  taxes                 Float?     // Total taxes
+  netTicketRevenue      Float?     // Auto-calc
+  
+  // Ancillary Revenue
+  fbsalesTotal          Float?     // F&B Sales Total ($) - NEW (was only per cap)
+  merchSalesTotal       Float?     // Merch Sales Total ($)
+  merchVenuePortion     Float?     // Venue portion (auto-calc based on split)
+  merchArtistPortion    Float?     // Artist portion (auto-calc)
+  parkingRevenue        Float?
+  coatCheckRevenue      Float?
+  otherRevenue          Float?     // Sponsorships, streaming, etc.
+  
+  // Total Revenue
+  grossReceiptsPotential Float?    // Maximum possible gross receipts
+  grossReceipts         Float?     // Total gross revenue (all sources)
+  totalGrossRevenue     Float?     // Same as grossReceipts (for clarity)
+  
+  // Operating Expenses (Enhanced)
+  // Labor Costs (NEW - detailed breakdown)
+  laborCosts            Json?      // Array of {role: string, hours: number, rate: number, total: number}
+  // Roles: bartenders, security, soundLightingTech, doorBoxOffice
+  bartenderHours        Float?     // Bartender hours
+  bartenderRate         Float?     // Bartender hourly rate
+  securityHours         Float?     // Security hours
+  securityRate          Float?     // Security hourly rate
+  soundLightingTech     Float?     // Sound/lighting tech cost
+  doorBoxOfficeHours    Float?     // Door/box office hours
+  doorBoxOfficeRate     Float?     // Door/box office hourly rate
+  
+  // Variable Costs
+  fbcogsPercentage      Float?     // F&B Cost of Goods percentage
+  fbcogsDollar          Float?     // F&B Cost of Goods dollar amount
+  creditCardFees        Float?
+  ticketPlatformFeesTotal Float?   // Total platform fees (may duplicate ticketingPlatformFees)
+  
+  // Fixed/Allocated Costs (NEW)
+  rentAllocation        Float?
+  insuranceAllocation   Float?
+  utilitiesAllocation   Float?
+  marketingSpend        Float?     // Show-specific marketing
+  
+  // Legacy Expenses (for backward compatibility)
+  expenses              Json?      // Array of {type: string, amount: number, category: string}
+  
+  // Marketing Investment (NEW)
+  marketingChannels     Json?      // Array of {channel: string, spend: number, reach: number}
+  // Channels: socialMediaAds, emailMarketing, printRadioOther, promoterMarketing
+  // Note: marketingSpend is defined above in Fixed/Allocated Costs section
+  socialMediaAds        Float?     // Social media ad spend
+  emailMarketing        Float?     // Email marketing spend
+  printRadioOther       Float?     // Print/radio/other marketing spend
+  estimatedReach        Int?       // Estimated reach (impressions)
+  newCustomersAcquired  Int?       // NEW customers (first-time email/ticket buyers)
+  
+  // Calculated Fields
+  artistPayout          Float?     // Calculated based on deal type
+  totalExpenses         Float?     // All expenses combined
+  grossProfit           Float?     // Net receipts - direct costs
+  netEventIncome        Float?     // Gross revenue - all expenses - artist payout
+  profitMargin          Float?     // netEventIncome / totalGrossRevenue * 100
+  
+  // Efficiency Metrics (NEW)
+  capacityUtilization   Float?     // ticketsSold / capacity * 100
+  revenuePerAvailableCapacity Float?  // RevPAC = total revenue / capacity
+  revenuePerAttendee    Float?     // total revenue / ticketsSold
+  costPerAttendee       Float?     // total expenses / ticketsSold
+  breakEvenAttendance   Int?       // Calculated threshold
+  
+  // Per-Attendee Breakdown (Enhanced)
+  ticketRevenuePerCap   Float?
+  fbRevenuePerCap       Float?     // F&B revenue per cap
+  merchRevenuePerCap    Float?
+  totalPerCap           Float?     // Total revenue per cap
+  laborCostPerCap       Float?     // Labor cost per cap
+  
+  // Legacy Per Cap Metrics (for backward compatibility)
+  perCapFb              Float?     // Food & Beverage per cap
+  perCapMerch           Float?     // Merchandise per cap
+  perCapParking         Float?     // Parking per cap
+  grossPerCap           Float?     // Total ancillary per cap
+  
+  // Post-Event Notes (NEW)
+  whatWorkedWell        String?    @db.Text
+  whatDidntWork         String?    @db.Text
+  bookAgain             String?    // "yes", "no", "maybe"
+  bookAgainNotes        String?    @db.Text
+  promoterRating        Int?       // 1-5 stars
+  audienceBehaviorNotes String?    @db.Text
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  event                 Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  artist                Contact? @relation("EventPerformanceArtist", fields: [artistId], references: [id], onDelete: SetNull)
+  agent                 Contact? @relation("EventPerformanceAgent", fields: [agentId], references: [id], onDelete: SetNull)
+  ticketLevels          TicketLevel[]
+  customExpenses        CustomExpense[]
+
+  @@index([eventDate])
+  @@index([artistId])
+  @@index([genre])
+  @@index([createdAt])
+}
+
+model TicketLevel {
+  id                String   @id @default(cuid())
+  eventPerformanceId String
+  tierName          String   // 'GA', 'VIP', 'Early Bird'
+  price             Float
+  quantityAvailable Int
+  quantitySold      Int
+  marketingChannel  String?   // 'Venue Website', 'Social Media', 'Email List', 'Partner', 'Walk-up'
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  eventPerformance EventPerformance @relation(fields: [eventPerformanceId], references: [id], onDelete: Cascade)
+
+  @@index([eventPerformanceId])
+}
+
+model CustomExpense {
+  id                String   @id @default(cuid())
+  eventPerformanceId String
+  expenseName       String
+  expenseAmount     Float
+  category          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  eventPerformance EventPerformance @relation(fields: [eventPerformanceId], references: [id], onDelete: Cascade)
+
+  @@index([eventPerformanceId])
+}
+
+model Opportunity {
+  id              String   @id @default(cuid())
+  venueId         String
+  artistName      String
+  stage           String   @default("New Prospect")
+  description     String?  @db.Text
+  artistInfo      Json?    // AI-extracted artist information
+  eventId         String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  venue           Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  labels          OpportunityLabel[]
+  notes           OpportunityNote[]
+  documents       OpportunityDocument[]
+  comments        OpportunityComment[]
+  event           Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+}
+
+model OpportunityLabel {
+  id              String   @id @default(cuid())
+  opportunityId   String
+  name            String
+  color           String?
+  createdAt       DateTime @default(now())
+
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  @@unique([opportunityId, name])
+}
+
+model OpportunityNote {
+  id              String   @id @default(cuid())
+  opportunityId   String
+  content         String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+}
+
+model OpportunityDocument {
+  id              String   @id @default(cuid())
+  opportunityId   String
+  name            String
+  url             String
+  type            String?
+  createdAt       DateTime @default(now())
+
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+}
+
+model OpportunityComment {
+  id              String   @id @default(cuid())
+  opportunityId   String
+  content         String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  opportunity     Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id              String   @id @default(cuid())
+  venueId         String
+  type            String   // "artist" or "agent"
+  name            String
+  email           String?
+  phone           String?
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  venue           Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  tags            ContactTag[]
+  relationships   ContactRelationship[] @relation("ContactRelations")
+  relatedContacts ContactRelationship[] @relation("RelatedContacts")
+  eventPerformancesAsArtist EventPerformance[] @relation("EventPerformanceArtist")
+  eventPerformancesAsAgent  EventPerformance[] @relation("EventPerformanceAgent")
+}
+
+model ContactTag {
+  id              String   @id @default(cuid())
+  contactId       String
+  name            String
+  color           String?
+  createdAt       DateTime @default(now())
+
+  contact         Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, name])
+}
+
+model ContactRelationship {
+  id              String   @id @default(cuid())
+  contactId       String
+  relatedContactId String
+  relationshipType String // "represents", "represented_by"
+  createdAt       DateTime @default(now())
+
+  contact         Contact  @relation("ContactRelations", fields: [contactId], references: [id], onDelete: Cascade)
+  relatedContact  Contact  @relation("RelatedContacts", fields: [relatedContactId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, relatedContactId, relationshipType])
+}
+
+model AIConversation {
+  id              String   @id @default(cuid())
+  venueId         String
+  userId          String
+  messages        Json     // Array of {role: string, content: string}
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  venue           Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+}
+
