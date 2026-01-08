@@ -54,6 +54,52 @@ export function AnalyticsDashboard() {
   const getChangeColor = (change: number) => change >= 0 ? 'text-green-600' : 'text-red-600';
   const getChangeIcon = (change: number) => change >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
 
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percentage }: any) => {
+    if (!percentage || percentage <= 3) return null;
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 35;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#374151"
+        textAnchor={x > cx ? 'start' : 'end'}
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight="600"
+        style={{ 
+          textShadow: '1px 1px 2px white, -1px -1px 2px white, 1px -1px 2px white, -1px 1px 2px white',
+          pointerEvents: 'none'
+        }}
+      >
+        {name}: {percentage.toFixed(1)}%
+      </text>
+    );
+  };
+
+  const renderCustomLabelLine = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any) => {
+    if (!percentage || percentage <= 3) return null;
+    const RADIAN = Math.PI / 180;
+    const mx = cx + (outerRadius + 5) * Math.cos(-midAngle * RADIAN);
+    const my = cy + (outerRadius + 5) * Math.sin(-midAngle * RADIAN);
+    const ex = mx + (mx > cx ? 1 : -1) * 30;
+    const ey = my;
+
+    return (
+      <line
+        x1={mx}
+        y1={my}
+        x2={ex}
+        y2={ey}
+        stroke="#94a3b8"
+        strokeWidth={1.5}
+      />
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Date Range Selector */}
@@ -324,28 +370,32 @@ export function AnalyticsDashboard() {
       )}
 
       {/* Additional Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-brown-800 mb-4">Revenue Per Cap Breakdown</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={metrics.revenueBreakdown || []}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {(metrics.revenueBreakdown || []).map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="p-2">
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={metrics.revenueBreakdown || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={renderCustomLabelLine}
+                  label={renderCustomLabel}
+                  outerRadius={75}
+                  fill="#8884d8"
+                  dataKey="value"
+                  stroke="#fff"
+                  strokeWidth={2}
+                >
+                  {(metrics.revenueBreakdown || []).map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
           <div className="mt-4 space-y-1 text-sm">
             {(metrics.revenueBreakdown || []).map((item: any, idx: number) => (
               <div key={idx} className="flex justify-between">
@@ -358,25 +408,29 @@ export function AnalyticsDashboard() {
 
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-brown-800 mb-4">Expense Breakdown</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={metrics.expenseBreakdown || []}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {(metrics.expenseBreakdown || []).map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number) => formatCurrency(value)} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="p-2">
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie
+                  data={metrics.expenseBreakdown || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={renderCustomLabelLine}
+                  label={renderCustomLabel}
+                  outerRadius={75}
+                  fill="#8884d8"
+                  dataKey="value"
+                  stroke="#fff"
+                  strokeWidth={2}
+                >
+                  {(metrics.expenseBreakdown || []).map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
           <div className="mt-4 space-y-1 text-sm">
             {(metrics.expenseBreakdown || []).map((item: any, idx: number) => (
               <div key={idx} className="flex justify-between">
@@ -386,40 +440,41 @@ export function AnalyticsDashboard() {
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-brown-800 mb-4">Marketing Efficiency</h3>
-          {metrics.totalMarketingSpend > 0 ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600">Avg Cost per Attendee</p>
-                <p className="text-2xl font-bold text-brown-800">
-                  {formatCurrency(metrics.avgCostPerAttendee || 0)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Return on Ad Spend</p>
-                <p className="text-2xl font-bold text-brown-800">
-                  ${(metrics.avgReturnOnAdSpend || 0).toFixed(2)} per $1 spent
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Marketing Spend</p>
-                <p className="text-xl font-semibold text-brown-800">
-                  {formatCurrency(metrics.totalMarketingSpend)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">New Customers Acquired</p>
-                <p className="text-xl font-semibold text-brown-800">
-                  {metrics.totalNewCustomers || 0}
-                </p>
-              </div>
+      {/* Marketing Efficiency - Moved Below */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-brown-800 mb-4">Marketing Efficiency</h3>
+        {metrics.totalMarketingSpend > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+              <p className="text-sm text-gray-600">Avg Cost per Attendee</p>
+              <p className="text-2xl font-bold text-brown-800">
+                {formatCurrency(metrics.avgCostPerAttendee || 0)}
+              </p>
             </div>
-          ) : (
-            <p className="text-gray-500 text-sm">No marketing data available for this period</p>
-          )}
-        </div>
+            <div>
+              <p className="text-sm text-gray-600">Return on Ad Spend</p>
+              <p className="text-2xl font-bold text-brown-800">
+                ${(metrics.avgReturnOnAdSpend || 0).toFixed(2)} per $1 spent
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total Marketing Spend</p>
+              <p className="text-xl font-semibold text-brown-800">
+                {formatCurrency(metrics.totalMarketingSpend)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">New Customers Acquired</p>
+              <p className="text-xl font-semibold text-brown-800">
+                {metrics.totalNewCustomers || 0}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">No marketing data available for this period</p>
+        )}
       </div>
     </div>
   );
