@@ -444,11 +444,6 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                 expenseAmount: ce.expenseAmount,
                 category: ce.category,
               })) || [],
-              customRevenueStreams: data.customRevenueStreams?.map((rs: any) => ({
-                streamName: rs.streamName,
-                amount: rs.amount,
-                category: rs.category,
-              })) || [],
               marketingSpend: data.marketingSpend || 0,
               socialMediaAds: data.socialMediaAds || 0,
               emailMarketing: data.emailMarketing || 0,
