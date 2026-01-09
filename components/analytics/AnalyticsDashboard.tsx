@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DollarSign, TrendingUp, Users, Calendar, Percent, ArrowUp, ArrowDown } from 'lucide-react';
 
@@ -54,12 +54,24 @@ export function AnalyticsDashboard() {
   const getChangeColor = (change: number) => change >= 0 ? 'text-green-600' : 'text-red-600';
   const getChangeIcon = (change: number) => change >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />;
 
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percentage }: any) => {
-    if (!percentage || percentage <= 3) return null;
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percentage }: any): ReactElement<SVGElement, string | React.JSXElementConstructor<any>> => {
     const RADIAN = Math.PI / 180;
     const radius = outerRadius + 35;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    if (!percentage || percentage <= 3) {
+      return (
+        <text
+          x={cx}
+          y={cy}
+          fill="none"
+          opacity={0}
+          fontSize={0}
+        >
+        </text>
+      );
+    }
 
     return (
       <text
@@ -80,13 +92,26 @@ export function AnalyticsDashboard() {
     );
   };
 
-  const renderCustomLabelLine = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any) => {
-    if (!percentage || percentage <= 3) return null;
+  const renderCustomLabelLine = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any): ReactElement<SVGElement, string | React.JSXElementConstructor<any>> => {
     const RADIAN = Math.PI / 180;
     const mx = cx + (outerRadius + 5) * Math.cos(-midAngle * RADIAN);
     const my = cy + (outerRadius + 5) * Math.sin(-midAngle * RADIAN);
     const ex = mx + (mx > cx ? 1 : -1) * 30;
     const ey = my;
+
+    if (!percentage || percentage <= 3) {
+      return (
+        <line
+          x1={cx}
+          y1={cy}
+          x2={cx}
+          y2={cy}
+          stroke="none"
+          strokeWidth={0}
+          opacity={0}
+        />
+      );
+    }
 
     return (
       <line

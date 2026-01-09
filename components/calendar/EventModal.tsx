@@ -13,6 +13,7 @@ export function EventModal({ event, onClose }: EventModalProps) {
     title: '',
     startDate: '',
     endDate: '',
+    agentName: '',
   });
   const [notes, setNotes] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
@@ -37,6 +38,7 @@ export function EventModal({ event, onClose }: EventModalProps) {
         title: event.title || '',
         startDate: startDate ? new Date(startDate).toISOString().slice(0, 16) : '',
         endDate: endDate ? new Date(endDate).toISOString().slice(0, 16) : '',
+        agentName: event.agentName || '',
       });
       setNotes(event.notes || []);
       setComments(event.comments || []);
@@ -48,6 +50,7 @@ export function EventModal({ event, onClose }: EventModalProps) {
         title: '',
         startDate: new Date().toISOString().slice(0, 16),
         endDate: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16),
+        agentName: '',
       });
       setNotes([]);
       setComments([]);
@@ -71,6 +74,25 @@ export function EventModal({ event, onClose }: EventModalProps) {
       });
 
       if (response.ok) {
+        // If creating a new event and agentName is provided, create an agent contact
+        if (!event?.id && formData.agentName?.trim()) {
+          try {
+            await fetch('/api/contacts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'agent',
+                name: formData.agentName.trim(),
+                email: null,
+                phone: null,
+                notes: null,
+              }),
+            });
+          } catch (contactError) {
+            // Log error but don't prevent event creation from succeeding
+            console.error('Failed to create agent contact:', contactError);
+          }
+        }
         onClose();
       } else {
         alert('Failed to save event');
@@ -321,6 +343,19 @@ export function EventModal({ event, onClose }: EventModalProps) {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Agent Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.agentName}
+                  onChange={(e) => setFormData({ ...formData, agentName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+                  placeholder="Enter agent name"
                 />
               </div>
 
