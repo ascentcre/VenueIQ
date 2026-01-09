@@ -69,6 +69,7 @@ export async function GET(req: Request) {
             artist: true,
             ticketLevels: true,
             customExpenses: true,
+            customRevenueStreams: true,
           },
         },
       },
@@ -325,14 +326,61 @@ export async function GET(req: Request) {
       .sort((a, b) => b.totalNetProfit - a.totalNetProfit)
       .slice(0, 10);
 
-    // Revenue breakdown
-    const revenueBreakdown = [
+    // Aggregate custom revenue streams dynamically by name/category
+    const customRevenueMap = new Map<string, number>();
+    eventsWithPerformance.forEach((e) => {
+      if (e.performance?.customRevenueStreams) {
+        e.performance.customRevenueStreams.forEach((rs: any) => {
+          // Use category if available, otherwise use streamName
+          const key = rs.category || rs.streamName || 'Unnamed Revenue Stream';
+          customRevenueMap.set(key, (customRevenueMap.get(key) || 0) + (rs.amount || 0));
+        });
+      }
+    });
+
+    // Calculate total from custom revenue streams (excluding those already counted in standard fields)
+    const totalCustomRevenueStreams = Array.from(customRevenueMap.values()).reduce((sum, val) => sum + val, 0);
+
+    // Revenue breakdown - start with standard categories
+    const revenueBreakdown: Array<{ name: string; value: number; percentage: number }> = [
       { name: 'Tickets', value: totalNetTicketRevenue, percentage: totalGrossRevenue > 0 ? (totalNetTicketRevenue / totalGrossRevenue) * 100 : 0 },
       { name: 'F&B', value: totalFbSales, percentage: totalGrossRevenue > 0 ? (totalFbSales / totalGrossRevenue) * 100 : 0 },
       { name: 'Merch', value: totalMerchVenuePortion, percentage: totalGrossRevenue > 0 ? (totalMerchVenuePortion / totalGrossRevenue) * 100 : 0 },
       { name: 'Parking', value: totalParkingRevenue, percentage: totalGrossRevenue > 0 ? (totalParkingRevenue / totalGrossRevenue) * 100 : 0 },
-      { name: 'Other', value: totalOtherRevenue, percentage: totalGrossRevenue > 0 ? (totalOtherRevenue / totalGrossRevenue) * 100 : 0 },
     ];
+
+    // Add individual custom revenue streams (only include those not already in standard categories)
+    // Filter out streams that might have been mapped to F&B, Merch, Parking in the performance route
+    customRevenueMap.forEach((value, key) => {
+      const lowerKey = key.toLowerCase();
+      // Skip if this looks like it was already counted in standard categories
+      const isStandardCategory = 
+        lowerKey.includes('f&b') || lowerKey.includes('food') || lowerKey.includes('beverage') ||
+        lowerKey.includes('merch') || lowerKey.includes('parking');
+      
+      // Only add if it's a significant amount and not a standard category
+      if (!isStandardCategory && value > 0) {
+        revenueBreakdown.push({
+          name: key,
+          value: value,
+          percentage: totalGrossRevenue > 0 ? (value / totalGrossRevenue) * 100 : 0,
+        });
+      }
+    });
+
+    // Add "Other" category for any remaining revenue not captured above
+    const accountedRevenue = revenueBreakdown.reduce((sum, item) => sum + item.value, 0);
+    const remainingRevenue = totalGrossRevenue - accountedRevenue;
+    if (remainingRevenue > 0) {
+      revenueBreakdown.push({
+        name: 'Other',
+        value: remainingRevenue,
+        percentage: totalGrossRevenue > 0 ? (remainingRevenue / totalGrossRevenue) * 100 : 0,
+      });
+    }
+
+    // Sort by value descending for better visualization
+    revenueBreakdown.sort((a, b) => b.value - a.value);
 
     // Expense breakdown
     const totalLaborCost = eventsWithPerformance.reduce(
@@ -350,27 +398,62 @@ export async function GET(req: Request) {
       0
     );
     const totalFbCogs = eventsWithPerformance.reduce((sum, e) => sum + (e.performance?.fbcogsDollar || 0), 0);
-    const totalCustomExpenses = eventsWithPerformance.reduce(
-      (sum, e) => {
-        if (e.performance?.customExpenses) {
-          return sum + e.performance.customExpenses.reduce((s: number, ce: any) => s + (ce.expenseAmount || 0), 0);
-        }
-        return sum;
-      },
-      0
-    );
     const totalFees = eventsWithPerformance.reduce(
       (sum, e) => sum + (e.performance?.creditCardFees || 0) + (e.performance?.ticketingPlatformFees || 0),
       0
     );
 
-    const expenseBreakdown = [
-      { name: 'Artist Payout', value: totalArtistPayout, percentage: totalExpenses > 0 ? (totalArtistPayout / (totalExpenses + totalArtistPayout)) * 100 : 0 },
+    // Aggregate custom expenses dynamically by name/category
+    const customExpenseMap = new Map<string, number>();
+    eventsWithPerformance.forEach((e) => {
+      if (e.performance?.customExpenses) {
+        e.performance.customExpenses.forEach((exp: any) => {
+          // Use category if available, otherwise use expenseName
+          const key = exp.category || exp.expenseName || 'Unnamed Expense';
+          customExpenseMap.set(key, (customExpenseMap.get(key) || 0) + (exp.expenseAmount || 0));
+        });
+      }
+    });
+
+    // Calculate total from custom expenses
+    const totalCustomExpenses = Array.from(customExpenseMap.values()).reduce((sum, val) => sum + val, 0);
+
+    // Expense breakdown - start with standard categories
+    const expenseBreakdown: Array<{ name: string; value: number; percentage: number }> = [
+      { name: 'Artist Payout', value: totalArtistPayout, percentage: (totalExpenses + totalArtistPayout) > 0 ? (totalArtistPayout / (totalExpenses + totalArtistPayout)) * 100 : 0 },
       { name: 'Labor', value: totalLaborCost, percentage: totalExpenses > 0 ? (totalLaborCost / totalExpenses) * 100 : 0 },
       { name: 'F&B COGS', value: totalFbCogs, percentage: totalExpenses > 0 ? (totalFbCogs / totalExpenses) * 100 : 0 },
       { name: 'Fees', value: totalFees, percentage: totalExpenses > 0 ? (totalFees / totalExpenses) * 100 : 0 },
-      { name: 'Other', value: totalCustomExpenses, percentage: totalExpenses > 0 ? (totalCustomExpenses / totalExpenses) * 100 : 0 },
     ];
+
+    // Add individual custom expenses
+    customExpenseMap.forEach((value, key) => {
+      if (value > 0) {
+        expenseBreakdown.push({
+          name: key,
+          value: value,
+          percentage: totalExpenses > 0 ? (value / totalExpenses) * 100 : 0,
+        });
+      }
+    });
+
+    // Add "Other" category if there are any unaccounted expenses
+    const accountedExpenses = expenseBreakdown
+      .filter(item => item.name !== 'Artist Payout')
+      .reduce((sum, item) => sum + item.value, 0);
+    const remainingExpenses = totalExpenses - accountedExpenses;
+    if (remainingExpenses > 0) {
+      expenseBreakdown.push({
+        name: 'Other',
+        value: remainingExpenses,
+        percentage: totalExpenses > 0 ? (remainingExpenses / totalExpenses) * 100 : 0,
+      });
+    }
+
+    // Sort by value descending for better visualization (but keep Artist Payout first if present)
+    const artistPayoutItem = expenseBreakdown.find(item => item.name === 'Artist Payout');
+    const otherItems = expenseBreakdown.filter(item => item.name !== 'Artist Payout').sort((a, b) => b.value - a.value);
+    const finalExpenseBreakdown = artistPayoutItem ? [artistPayoutItem, ...otherItems] : otherItems;
 
     // Marketing efficiency
     const totalMarketingSpend = eventsWithPerformance.reduce(
@@ -424,7 +507,7 @@ export async function GET(req: Request) {
       
       // Breakdowns
       revenueBreakdown,
-      expenseBreakdown,
+      expenseBreakdown: finalExpenseBreakdown,
       
       // Marketing
       avgCostPerAttendee,

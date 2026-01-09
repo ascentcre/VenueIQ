@@ -76,6 +76,89 @@ model Venue {
   contacts        Contact[]
   aiConversations AIConversation[]
   aiContext       String?  @db.Text // Venue-specific context for Lola
+  performanceTemplates PerformanceTemplate[]
+}
+
+model PerformanceTemplate {
+  id                String   @id @default(cuid())
+  venueId           String
+  name              String   // Template name (e.g., "Standard Show", "VIP Event")
+  description       String?  // Optional description
+  isDefault         Boolean  @default(false) // One default template per venue
+  defaultValues     Json?    // Store other default values (dealType, rates, etc.)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  venue             Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  ticketLevels      TemplateTicketLevel[]
+  customExpenses     TemplateCustomExpense[]
+  customRevenueStreams TemplateCustomRevenueStream[]
+  customMarketingInvestments TemplateCustomMarketingInvestment[]
+
+  @@index([venueId])
+}
+
+model TemplateTicketLevel {
+  id                String   @id @default(cuid())
+  templateId        String
+  tierName          String
+  price             Float
+  quantityAvailable Int?      // Optional - can be overridden per event
+  marketingChannel  String?
+  sortOrder         Int       @default(0) // For ordering
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  template          PerformanceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+model TemplateCustomExpense {
+  id                String   @id @default(cuid())
+  templateId        String
+  expenseName       String
+  expenseAmount     Float?   // Optional - can be set per event
+  category          String?
+  sortOrder         Int       @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  template          PerformanceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+model TemplateCustomRevenueStream {
+  id                String   @id @default(cuid())
+  templateId        String
+  streamName        String
+  amount            Float?   // Optional - can be set per event
+  category          String?
+  sortOrder         Int       @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  template          PerformanceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
+}
+
+model TemplateCustomMarketingInvestment {
+  id                String   @id @default(cuid())
+  templateId        String
+  investmentName    String
+  amount            Float?   // Optional - can be set per event
+  category          String?
+  estimatedReach    Int?     // Optional
+  newCustomersAcquired Int?  // Optional
+  sortOrder         Int       @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  template          PerformanceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId])
 }
 
 model VenueMember {
@@ -301,6 +384,7 @@ model EventPerformance {
   agent                 Contact? @relation("EventPerformanceAgent", fields: [agentId], references: [id], onDelete: SetNull)
   ticketLevels          TicketLevel[]
   customExpenses        CustomExpense[]
+  customRevenueStreams  CustomRevenueStream[]
 
   @@index([eventDate])
   @@index([artistId])
@@ -329,6 +413,20 @@ model CustomExpense {
   eventPerformanceId String
   expenseName       String
   expenseAmount     Float
+  category          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  eventPerformance EventPerformance @relation(fields: [eventPerformanceId], references: [id], onDelete: Cascade)
+
+  @@index([eventPerformanceId])
+}
+
+model CustomRevenueStream {
+  id                String   @id @default(cuid())
+  eventPerformanceId String
+  streamName        String
+  amount            Float
   category          String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -454,4 +552,3 @@ model AIConversation {
 
   venue           Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
 }
-

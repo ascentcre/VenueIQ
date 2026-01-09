@@ -21,6 +21,7 @@ export interface EventPerformanceData {
   merchSplitValue?: number;
   parkingRevenue?: number;
   otherRevenue?: number;
+  customRevenueStreams?: Array<{ amount: number }>;
   
   // Expenses
   bartenderHours?: number;
@@ -120,7 +121,13 @@ export function calculateTotalGrossRevenue(data: EventPerformanceData): number {
   const parkingRevenue = data.parkingRevenue || 0;
   const otherRevenue = data.otherRevenue || 0;
   
-  return netTicketRevenue + fbSales + venueMerchPortion + parkingRevenue + otherRevenue;
+  // Sum all custom revenue streams
+  const customRevenueTotal = (data.customRevenueStreams || []).reduce(
+    (sum, stream) => sum + (stream.amount || 0),
+    0
+  );
+  
+  return netTicketRevenue + fbSales + venueMerchPortion + parkingRevenue + otherRevenue + customRevenueTotal;
 }
 
 /**

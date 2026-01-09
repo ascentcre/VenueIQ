@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Users, Mail, Trash2, Eye, EyeOff, Building2 } from 'lucide-react';
+import { TemplateManager } from '@/components/performance/TemplateManager';
 
 export function SettingsView() {
   const { data: session } = useSession();
@@ -354,6 +355,13 @@ export function SettingsView() {
           ))}
         </div>
       </div>
+
+      {/* Performance Templates */}
+      {isAdmin && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <TemplateManager />
+        </div>
+      )}
     </div>
   );
 }

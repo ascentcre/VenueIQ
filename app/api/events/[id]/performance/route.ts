@@ -44,6 +44,7 @@ export async function GET(
       include: {
         ticketLevels: true,
         customExpenses: true,
+        customRevenueStreams: true,
         artist: true,
         agent: true,
       },
@@ -94,8 +95,8 @@ export async function POST(
     const body = await req.json();
     console.log('Received performance data:', JSON.stringify(body, null, 2));
     
-    // Extract ticket levels and custom expenses from body
-    const { ticketLevels, customExpenses, eventDate, ...performanceData } = body;
+    // Extract ticket levels, custom expenses, and custom revenue streams from body
+    const { ticketLevels, customExpenses, customRevenueStreams, eventDate, ...performanceData } = body;
     
     // Calculate gross ticket sales from ticket levels if provided
     if (ticketLevels && Array.isArray(ticketLevels) && ticketLevels.length > 0) {
@@ -110,6 +111,7 @@ export async function POST(
     const calculationData = {
       ...performanceData,
       customExpenses: customExpenses || [],
+      customRevenueStreams: customRevenueStreams || [],
       venueCapacity: performanceData.capacity || performanceData.venueCapacity,
     };
     
@@ -147,15 +149,25 @@ export async function POST(
       merchCommissionType: performanceData.merchSplitType?.toLowerCase() || null,
       productionCosts: performanceData.productionCosts || null,
       
-      // Revenue
+      // Revenue - ticket sales are calculated from ticket levels
       grossTicketSales: performanceData.grossTicketSales || null,
-      facilityFeesKept: performanceData.facilityFeesKept || null,
-      ticketingFeesPaidToPlatform: performanceData.ticketingFeesPaidToPlatform || null,
-      taxes: performanceData.taxes || null,
-      fbsalesTotal: performanceData.fbSales || null,
-      merchSalesTotal: performanceData.totalMerchSales || null,
-      parkingRevenue: performanceData.parkingRevenue || null,
-      otherRevenue: performanceData.otherRevenue || null,
+      // Legacy revenue fields - calculate from custom revenue streams for backward compatibility
+      fbsalesTotal: customRevenueStreams?.find((rs: any) => {
+        const name = (rs.streamName || '').toLowerCase();
+        return name.includes('f&b') || name.includes('food') || name.includes('beverage');
+      })?.amount || null,
+      merchSalesTotal: customRevenueStreams?.find((rs: any) => {
+        const name = (rs.streamName || '').toLowerCase();
+        return name.includes('merch');
+      })?.amount || null,
+      parkingRevenue: customRevenueStreams?.find((rs: any) => {
+        const name = (rs.streamName || '').toLowerCase();
+        return name.includes('parking');
+      })?.amount || null,
+      otherRevenue: customRevenueStreams?.filter((rs: any) => {
+        const name = (rs.streamName || '').toLowerCase();
+        return !name.includes('f&b') && !name.includes('food') && !name.includes('beverage') && !name.includes('merch') && !name.includes('parking');
+      }).reduce((sum: number, rs: any) => sum + (rs.amount || 0), 0) || null,
       
       // Expenses
       bartenderHours: performanceData.bartenderHours || null,
@@ -169,13 +181,7 @@ export async function POST(
       creditCardFees: performanceData.creditCardFees || null,
       ticketPlatformFeesTotal: performanceData.ticketPlatformFees || null,
       
-      // Marketing
-      marketingSpend: performanceData.marketingSpend || null,
-      socialMediaAds: performanceData.socialMediaAds || null,
-      emailMarketing: performanceData.emailMarketing || null,
-      printRadioOther: performanceData.printRadioOther || null,
-      estimatedReach: performanceData.estimatedReach || null,
-      newCustomersAcquired: performanceData.newCustomersAcquired || null,
+      // Marketing - now handled via customMarketingInvestments
       
       // Post-Event Notes
       whatWorkedWell: performanceData.whatWorkedWell || null,
@@ -269,12 +275,33 @@ export async function POST(
       }
     }
     
+    // Handle custom revenue streams
+    if (customRevenueStreams && Array.isArray(customRevenueStreams)) {
+      // Delete existing custom revenue streams
+      await prisma.customRevenueStream.deleteMany({
+        where: { eventPerformanceId: performance.id },
+      });
+      
+      // Create new custom revenue streams
+      if (customRevenueStreams.length > 0) {
+        await prisma.customRevenueStream.createMany({
+          data: customRevenueStreams.map((stream: any) => ({
+            eventPerformanceId: performance.id,
+            streamName: stream.streamName || '',
+            amount: stream.amount || 0,
+            category: stream.category || null,
+          })),
+        });
+      }
+    }
+    
     // Fetch the complete performance with relations
     const completePerformance = await prisma.eventPerformance.findUnique({
       where: { id: performance.id },
       include: {
         ticketLevels: true,
         customExpenses: true,
+        customRevenueStreams: true,
         artist: true,
         agent: true,
       },
