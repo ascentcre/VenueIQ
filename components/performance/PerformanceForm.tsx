@@ -178,7 +178,6 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
   const revenueStreamsTemplates = templates.filter(t => t.customRevenueStreams && t.customRevenueStreams.length > 0);
   const marketingTemplates = templates.filter(t => t.customMarketingInvestments && t.customMarketingInvestments.length > 0);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(null); // Track which template was applied
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateDescription, setNewTemplateDescription] = useState('');
@@ -613,18 +612,9 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
         });
       }
 
-      // Track which template was applied so we can reset later
-      setAppliedTemplateId(templateId);
     } catch (error) {
       console.error('Error applying template:', error);
       alert('Failed to load template. Please try again.');
-    }
-  };
-
-  // Reset to the applied template
-  const resetToTemplate = () => {
-    if (appliedTemplateId) {
-      applyTemplate(appliedTemplateId, false);
     }
   };
 
@@ -1416,7 +1406,6 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                           setSelectedTemplateId(templateId);
                         } else {
                           setSelectedTemplateId(null);
-                          setAppliedTemplateId(null);
                         }
                       }}
                       className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500"
@@ -1441,47 +1430,15 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {appliedTemplateId && (
-                    <div className="relative inline-block overflow-visible">
-                      <button
-                        type="button"
-                        onClick={resetToTemplate}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                        onMouseEnter={() => setHoveredTooltip('reset-template')}
-                        onMouseLeave={() => setHoveredTooltip(null)}
-                      >
-                        <X className="w-4 h-4" />
-                        Reset to Template
-                      </button>
-                      {hoveredTooltip === 'reset-template' && (
-                        <div className="absolute right-0 bottom-full mb-2 z-50 w-56 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl pointer-events-none">
-                          <div className="font-semibold mb-1">Reset to Template</div>
-                          <div className="text-gray-200">
-                            This will restore all ticket sales, expenses, revenue streams, and marketing investment back to the template values, replacing any changes you've made.
-                          </div>
-                          <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowSaveTemplateModal(true)}
-                    className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Save Current as Template
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSaveTemplateModal(true)}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Save Current as Template
+                </button>
               </div>
-              {appliedTemplateId && (
-                <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
-                  <strong>Template Applied:</strong> You can edit all prices, quantities, ticket sales, expenses, revenue streams, and marketing investment below. 
-                  These are starting values that you can customize for this specific event. 
-                  Changes here won't affect the template.
-                </div>
-              )}
               {templates.length === 0 && (
                 <div className="text-xs text-gray-600 bg-gray-100 p-2 rounded">
                   <strong>No templates yet.</strong> Create your first template by setting up ticket sales, expenses, revenue streams, and marketing investment, then click "Save Current as Template" above. 
@@ -2193,7 +2150,7 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                 <button
                   type="button"
                   onClick={() => setShowSaveRevenueStreamsTemplateModal(true)}
-                  className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Save Current as Template
@@ -2212,9 +2169,11 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
 
           {/* Custom Revenue Streams */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-700 flex items-center gap-2 overflow-visible">
-                Additional Revenue Streams
+            <div className="mb-3">
+              <div className="flex items-center gap-2 overflow-visible mb-1">
+                <h4 className="font-semibold text-gray-700">
+                  Additional Revenue Streams
+                </h4>
                 <div 
                   className="relative inline-block overflow-visible"
                   onMouseEnter={() => setHoveredTooltip('revenue-streams')}
@@ -2229,7 +2188,8 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                     </div>
                   )}
                 </div>
-              </h4>
+              </div>
+              <p className="text-xs text-gray-500">Edit amounts or add/remove revenue streams as needed</p>
             </div>
             <div className="space-y-2">
               {customRevenueStreamFields.map((field, index) => (
@@ -2380,7 +2340,7 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                 <button
                   type="button"
                   onClick={() => setShowSaveExpensesTemplateModal(true)}
-                  className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Save Current as Template
@@ -2398,8 +2358,8 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-700">Custom Expenses</h4>
+            <div className="mb-3">
+              <h4 className="font-semibold text-gray-700 mb-1">Custom Expenses</h4>
               <p className="text-xs text-gray-500">Edit amounts or add/remove expenses as needed</p>
             </div>
             <div className="space-y-2">
@@ -2507,7 +2467,7 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                 <button
                   type="button"
                   onClick={() => setShowSaveMarketingTemplateModal(true)}
-                  className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1"
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors shadow-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Save Current as Template
@@ -2526,9 +2486,9 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
 
           {/* Custom Marketing Investments */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-gray-700">Marketing Investments</h4>
-              <p className="text-xs text-gray-500">Add or remove marketing investments as needed</p>
+            <div className="mb-3">
+              <h4 className="font-semibold text-gray-700 mb-1">Marketing Investments</h4>
+              <p className="text-xs text-gray-500">Edit amounts or add/remove marketing investments as needed</p>
             </div>
             <div className="space-y-2">
               {customMarketingInvestmentFields.map((field, index) => (
