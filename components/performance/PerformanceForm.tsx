@@ -444,12 +444,58 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
                 expenseAmount: ce.expenseAmount,
                 category: ce.category,
               })) || [],
-              marketingSpend: data.marketingSpend || 0,
-              socialMediaAds: data.socialMediaAds || 0,
-              emailMarketing: data.emailMarketing || 0,
-              printRadioOther: data.printRadioOther || 0,
-              estimatedReach: data.estimatedReach || 0,
-              newCustomersAcquired: data.newCustomersAcquired || 0,
+              // Convert old marketing fields to customMarketingInvestments array for backward compatibility
+              customMarketingInvestments: (() => {
+                const investments: any[] = [];
+                // Check if there are existing custom marketing investments
+                if (data.customMarketingInvestments && Array.isArray(data.customMarketingInvestments)) {
+                  return data.customMarketingInvestments.map((mi: any) => ({
+                    investmentName: mi.investmentName || mi.name || '',
+                    amount: mi.amount || 0,
+                    category: mi.category || '',
+                    estimatedReach: mi.estimatedReach || undefined,
+                    newCustomersAcquired: mi.newCustomersAcquired || undefined,
+                  }));
+                }
+                // Otherwise, convert old individual fields to custom investments
+                if (data.marketingSpend && data.marketingSpend > 0) {
+                  investments.push({ 
+                    investmentName: 'General Marketing', 
+                    amount: data.marketingSpend, 
+                    category: 'General',
+                    estimatedReach: data.estimatedReach || undefined,
+                    newCustomersAcquired: data.newCustomersAcquired || undefined,
+                  });
+                }
+                if (data.socialMediaAds && data.socialMediaAds > 0) {
+                  investments.push({ 
+                    investmentName: 'Social Media Ads', 
+                    amount: data.socialMediaAds, 
+                    category: 'Digital',
+                    estimatedReach: data.estimatedReach || undefined,
+                    newCustomersAcquired: data.newCustomersAcquired || undefined,
+                  });
+                }
+                if (data.emailMarketing && data.emailMarketing > 0) {
+                  investments.push({ 
+                    investmentName: 'Email Marketing', 
+                    amount: data.emailMarketing, 
+                    category: 'Digital',
+                    estimatedReach: data.estimatedReach || undefined,
+                    newCustomersAcquired: data.newCustomersAcquired || undefined,
+                  });
+                }
+                if (data.printRadioOther && data.printRadioOther > 0) {
+                  investments.push({ 
+                    investmentName: 'Print/Radio/Other', 
+                    amount: data.printRadioOther, 
+                    category: 'Traditional',
+                    estimatedReach: data.estimatedReach || undefined,
+                    newCustomersAcquired: data.newCustomersAcquired || undefined,
+                  });
+                }
+                return investments;
+              })(),
               whatWorkedWell: data.whatWorkedWell || '',
               whatDidntWork: data.whatDidntWork || '',
               bookAgain: data.bookAgain === 'yes' ? 'Yes' : data.bookAgain === 'no' ? 'No' : 'Maybe',
@@ -486,9 +532,11 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
       const currentTicketLevels = watch('ticketLevels') || [];
       const currentExpenses = watch('customExpenses') || [];
       const currentRevenueStreams = watch('customRevenueStreams') || [];
-      const currentMarketingSpend = watch('marketingSpend') || 0;
+      const currentMarketingInvestments = watch('customMarketingInvestments') || [];
+      const hasMarketingInvestments = currentMarketingInvestments.length > 0 || 
+        currentMarketingInvestments.some((mi: any) => (mi.amount || 0) > 0);
       
-      if (showWarning && (currentTicketLevels.length > 0 || currentExpenses.length > 0 || currentRevenueStreams.length > 0 || currentMarketingSpend > 0)) {
+      if (showWarning && (currentTicketLevels.length > 0 || currentExpenses.length > 0 || currentRevenueStreams.length > 0 || hasMarketingInvestments)) {
         const confirmed = window.confirm(
           'Applying a template will replace your current ticket sales, expenses, revenue streams, and marketing investment. ' +
           'You can still edit all values after applying. Continue?'
@@ -672,13 +720,7 @@ export function PerformanceForm({ eventId, onSave, onCancel }: PerformanceFormPr
           doorBoxOfficeRate: formData.doorBoxOfficeRate || 0,
           dealType: formData.dealType,
           merchSplitType: formData.merchSplitType,
-          // Marketing Investment
-          marketingSpend: formData.marketingSpend || 0,
-          socialMediaAds: formData.socialMediaAds || 0,
-          emailMarketing: formData.emailMarketing || 0,
-          printRadioOther: formData.printRadioOther || 0,
-          estimatedReach: formData.estimatedReach || 0,
-          newCustomersAcquired: formData.newCustomersAcquired || 0,
+          // Marketing Investment is now handled via customMarketingInvestments array
         },
         isDefault: false,
       };
